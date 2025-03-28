@@ -1,0 +1,33 @@
+{
+    "style_code_panel_border": "dim #8B4513",
+    "style_code_panel_title": "italic #8B4513",
+    "style_quote_panel_border": "dim #A0522D",
+    "style_blockquote_content": "italic #A0522D",
+    "style_list_guide": "#CD853F",
+
+    "style_header_numbered": "bold #B8860B",
+    "style_header1": "bold #DAA520 underline",
+    "style_header2": "bold #B8860B",
+    "style_header3": "bold #A0522D",
+    "style_hr": "dim #D2B48C",
+    "style_key_value_line": "default",
+
+    "style_list_level0": "#CD853F",
+    "style_list_level1": "#F4A460",
+    "style_list_level2": "#FFDEAD",
+    "style_list_level3": "#FFEBCD",
+    "style_list_level4": "#CD853F",
+    "style_list_level5": "#F4A460",
+    "style_list_level6": "#FFDEAD",
+    "style_list_level7": "#FFEBCD",
+    "style_list_level8": "#CD853F",
+    "style_list_level9": "#F4A460",
+
+    "style_inline_italic": "italic",
+
+    "style_inline_bold": "bold reverse",
+
+    "style_inline_code": "#DAA520 on #2E2E2E",
+
+    "style_default": "#D2B48C"
+}
