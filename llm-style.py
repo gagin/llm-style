@@ -55,7 +55,7 @@ DEFAULT_DETECTION_JSON = {
     "inline_code": r"(?P<code>`(?P<content_code>.*?)`)",
 }
 
-# NOTE: mapping.json and styles.json defaults do not need changes for this fix.
+# NOTE: mapping.json defaults do not need changes for this fix.
 # 2.2. Default Style Mapping (mapping.json)
 DEFAULT_MAPPING_JSON = {
     "code_block": {"panel_border_style": "style_code_panel_border", "panel_title_style": "style_code_panel_title", "syntax_theme": "default"},
@@ -66,43 +66,38 @@ DEFAULT_MAPPING_JSON = {
     "list_item_bullet": "style_list_level", "list_item_numbered": "style_list_level",
     "default_text": "style_default",
 }
-# 2.3. Default Styles (styles.json)
+
+# 2.3. Default Styles (styles.json) - This is the fallback if styles.json is missing
 # ------------------------------------------------------------------------------
 DEFAULT_STYLES_JSON = {
-    # Block Styles
+    # Default original theme (adjust if you prefer the calm theme as the hardcoded default)
     "style_code_panel_border": "dim blue",
     "style_code_panel_title": "italic blue",
     "style_quote_panel_border": "dim yellow",
     "style_blockquote_content": "italic yellow",
     "style_list_guide": "dim cyan",
-
-    # Line Styles
     "style_header_numbered": "bold magenta",
     "style_header1": "bold bright_blue underline",
     "style_header2": "bold blue",
     "style_header3": "bold cyan",
     "style_hr": "dim",
     "style_key_value_line": "default",
-
-    # List Level Content Styles
     "style_list_level0": "green",
     "style_list_level1": "light_sea_green",
     "style_list_level2": "medium_spring_green",
     "style_list_level3": "spring_green1",
-
-    # --- Inline Styles ---
+    "style_list_level4": "green",
+    "style_list_level5": "light_sea_green",
+    "style_list_level6": "medium_spring_green",
+    "style_list_level7": "spring_green1",
+    "style_list_level8": "green",
+    "style_list_level9": "light_sea_green",
     "style_inline_bold": "bold",
     "style_inline_italic": "italic",
-    # --- MODIFICATION START ---
-    # Directly define the style for inline code here
     "style_inline_code": "bright_black on grey30",
-    # Remove the redundant style name below
-    # "style_code_inline_bg": "bright_black on grey30", # REMOVED
-    # --- MODIFICATION END ---
-
-    # Fallback Style
     "style_default": "tan",
 }
+
 # ==============================================================================
 # 3. Configuration Loading and Validation
 # ==============================================================================
@@ -113,6 +108,7 @@ def ensure_config_dir(config_dir_path: Path, debug: bool = False):
         except OSError as e: print(f"ERROR: Failed to create config directory {config_dir_path}: {e}", file=sys.stderr); sys.exit(1)
 
 def load_or_create_config(config_path: Path, default_content: dict, debug: bool = False):
+    """Loads a config file, or creates it with default content if it doesn't exist."""
     if not config_path.exists():
         if debug: print(f"DEBUG: Creating default config file: {config_path}", file=sys.stderr)
         try:
@@ -126,6 +122,20 @@ def load_or_create_config(config_path: Path, default_content: dict, debug: bool 
         except json.JSONDecodeError as e: print(f"ERROR: Invalid JSON in {config_path}: {e}", file=sys.stderr); print("Fix or delete file.", file=sys.stderr); sys.exit(1)
         except IOError as e: print(f"ERROR: Cannot read config file {config_path}: {e}", file=sys.stderr); sys.exit(1)
         except Exception as e: print(f"ERROR: Unexpected error loading {config_path}: {e}", file=sys.stderr); sys.exit(1)
+
+def load_config_file(config_path: Path, debug: bool = False) -> Dict:
+    """Loads a config file. Errors out if it doesn't exist."""
+    if not config_path.exists():
+        print(f"ERROR: Specified configuration file not found: {config_path}", file=sys.stderr)
+        sys.exit(1)
+    else:
+        if debug: print(f"DEBUG: Loading config file: {config_path}", file=sys.stderr)
+        try:
+            with open(config_path, "r", encoding="utf-8") as f: return json.load(f)
+        except json.JSONDecodeError as e: print(f"ERROR: Invalid JSON in {config_path}: {e}", file=sys.stderr); print("Fix or delete file.", file=sys.stderr); sys.exit(1)
+        except IOError as e: print(f"ERROR: Cannot read config file {config_path}: {e}", file=sys.stderr); sys.exit(1)
+        except Exception as e: print(f"ERROR: Unexpected error loading {config_path}: {e}", file=sys.stderr); sys.exit(1)
+
 
 def validate_configs(detection_rules: Dict, compiled_rules: Dict, style_mapping: Dict, styles: Dict, debug: bool = False) -> bool:
     is_valid = True; special_mapping_keys = {"default_text", "code_block", "blockquote", "list_block"}; list_content_mapping_keys = {"list_item_bullet", "list_item_numbered"}
@@ -145,7 +155,7 @@ def validate_configs(detection_rules: Dict, compiled_rules: Dict, style_mapping:
              if debug: print(f"DEBUG Warning: Rule '{rule_name}' mapped but has no detection rule.", file=sys.stderr)
     for rule_name, mapping_value in style_mapping.items():
         if isinstance(mapping_value, str):
-            if rule_name in list_content_mapping_keys: continue
+            if rule_name in list_content_mapping_keys: continue # List levels checked separately
             style_name = mapping_value
             if style_name not in valid_styles: print(f"ERROR: Style '{style_name}' (for rule '{rule_name}') not found/invalid.", file=sys.stderr); is_valid = False
         elif isinstance(mapping_value, dict):
@@ -167,7 +177,7 @@ def validate_configs(detection_rules: Dict, compiled_rules: Dict, style_mapping:
         base_style_name = style_mapping.get(list_key)
         if base_style_name:
             if not isinstance(base_style_name, str): print(f"ERROR: '{list_key}' mapping must be string.", file=sys.stderr); is_valid = False
-            elif f"{base_style_name}0" not in valid_styles: print(f"ERROR: List style '{base_style_name}0' (level 0 for '{list_key}') not found/invalid.", file=sys.stderr); is_valid = False
+            elif f"{base_style_name}0" not in valid_styles: print(f"ERROR: List style '{base_style_name}0' (level 0 for '{list_key}') not found/invalid.", file=sys.stderr); is_valid = False # Check level 0 exists
     list_block_config = style_mapping.get("list_block")
     if isinstance(list_block_config, dict):
         guide_style_name = list_block_config.get("guide_style")
@@ -179,15 +189,38 @@ def validate_configs(detection_rules: Dict, compiled_rules: Dict, style_mapping:
     else: print("Configuration validation failed. Please fix errors.", file=sys.stderr)
     return is_valid
 
-def load_all_configs(config_dir: str, debug: bool = False) -> Tuple[Dict[str, Optional[re.Pattern]], Dict, Dict]:
-    config_dir_path = Path(config_dir).expanduser(); ensure_config_dir(config_dir_path, debug=debug)
-    detection_path = config_dir_path / "detection.json"; mapping_path = config_dir_path / "mapping.json"; styles_path = config_dir_path / "styles.json"
+def load_all_configs(config_dir: str, style_filename: str, debug: bool = False) -> Tuple[Dict[str, Optional[re.Pattern]], Dict, Dict]:
+    """Loads all config files, using the specified style filename."""
+    config_dir_path = Path(config_dir).expanduser()
+    ensure_config_dir(config_dir_path, debug=debug)
+
+    detection_path = config_dir_path / "detection.json"
+    mapping_path = config_dir_path / "mapping.json"
+    styles_path = config_dir_path / style_filename # Use the provided filename
+
+    # Load detection rules (create default if missing)
     detection_rules_raw = load_or_create_config(detection_path, DEFAULT_DETECTION_JSON, debug=debug)
+    if not isinstance(detection_rules_raw, dict):
+        print(f"ERROR: {detection_path} must contain a JSON object.", file=sys.stderr); sys.exit(1)
+
+    # Load style mapping (create default if missing)
     style_mapping = load_or_create_config(mapping_path, DEFAULT_MAPPING_JSON, debug=debug)
-    styles = load_or_create_config(styles_path, DEFAULT_STYLES_JSON, debug=debug)
-    if not isinstance(detection_rules_raw, dict): print(f"ERROR: {detection_path} must be JSON object.", file=sys.stderr); sys.exit(1)
-    if not isinstance(style_mapping, dict): print(f"ERROR: {mapping_path} must be JSON object.", file=sys.stderr); sys.exit(1)
-    if not isinstance(styles, dict): print(f"ERROR: {styles_path} must be JSON object.", file=sys.stderr); sys.exit(1)
+    if not isinstance(style_mapping, dict):
+        print(f"ERROR: {mapping_path} must contain a JSON object.", file=sys.stderr); sys.exit(1)
+
+    # Load styles
+    styles: Dict
+    if style_filename == "styles.json":
+        # Only create the default styles.json if it's the one requested and missing
+        styles = load_or_create_config(styles_path, DEFAULT_STYLES_JSON, debug=debug)
+    else:
+        # If a custom style file is requested, load it but DON'T create it if missing
+        styles = load_config_file(styles_path, debug=debug)
+
+    if not isinstance(styles, dict):
+        print(f"ERROR: {styles_path} must contain a JSON object.", file=sys.stderr); sys.exit(1)
+
+    # Compile detection rules
     compiled_rules: Dict[str, Optional[re.Pattern]] = {}
     for name, pattern_str in detection_rules_raw.items():
         try:
@@ -197,7 +230,11 @@ def load_all_configs(config_dir: str, debug: bool = False) -> Tuple[Dict[str, Op
             compiled_rules[name] = re.compile(pattern_str)
         except re.error as e: print(f"ERROR: Syntax Error in regex '{name}': {e}", file=sys.stderr); compiled_rules[name] = None
         except TypeError: print(f"ERROR: Type Error compiling regex '{name}'.", file=sys.stderr); compiled_rules[name] = None
-    if not validate_configs(detection_rules_raw, compiled_rules, style_mapping, styles, debug=debug): sys.exit(1)
+
+    # Validate the combined configuration
+    if not validate_configs(detection_rules_raw, compiled_rules, style_mapping, styles, debug=debug):
+        sys.exit(1)
+
     return compiled_rules, style_mapping, styles
 
 # ==============================================================================
@@ -266,9 +303,18 @@ def process_inline_markup(text_content: str, base_style: str, styles: Dict[str, 
             if content is not None:
                 style_str = inline_rule_map[match_group_name]
                 try:
+                    # Combine base style with specific inline style
                     parsed_base_style = Style.parse(base_style)
                     parsed_inline_style = Style.parse(style_str)
-                    combined_style = Style.combine([parsed_base_style, parsed_inline_style])
+                    # Handle attribute-only styles correctly (bold, italic)
+                    if style_str == "bold" or style_str == "italic":
+                       # Apply only the attribute, keep base color etc.
+                       combined_style = parsed_base_style + parsed_inline_style
+                    else:
+                        # For styles with color/bg, let the inline style override fully if needed,
+                        # but Rich's Style.combine often handles this well.
+                       combined_style = Style.combine([parsed_base_style, parsed_inline_style])
+
                     output_text.append(content, style=combined_style)
                 except StyleSyntaxError as e_style:
                      print(f"ERROR: Invalid style '{style_str}' or '{base_style}' for inline {match_group_name}: {e_style}", file=sys.stderr)
@@ -277,12 +323,15 @@ def process_inline_markup(text_content: str, base_style: str, styles: Dict[str, 
                      print(f"ERROR: processing inline part '{content}' for {match_group_name}: {e_combine}", file=sys.stderr)
                      output_text.append(content, style=base_style) # Fallback append
             else:
-                # If content IS None (should be rare), append the raw match or nothing?
+                # If content IS None (e.g., empty bold **), append the raw match or nothing?
                 # Let's append the raw matched string with base style as a safe fallback.
                 raw_match_text = match.group(0)
                 if raw_match_text:
                     output_text.append(raw_match_text)
-                print(f"Warning: Extracted 'None' content for inline match '{match_group_name}'. Appending raw: '{raw_match_text}'", file=sys.stderr)
+                # Optional: Print warning only if raw_match_text was expected but content was None
+                # if raw_match_text != match.group(0): # Heuristic check
+                #    print(f"Warning: Extracted 'None' content for inline match '{match_group_name}'. Appending raw: '{raw_match_text}'", file=sys.stderr)
+
 
         else:
             # Match found by combined regex, but couldn't identify group? Append raw.
@@ -319,10 +368,11 @@ def apply_styles(
     in_list_block = False; current_tree: Optional[Tree] = None
     node_stack: List[Tuple[int, Any]] = []
     list_block_config: Dict = style_mapping.get("list_block", {})
-    list_guide_style = styles.get(list_block_config.get("guide_style", ""), "default")
+    list_guide_style_name = list_block_config.get("guide_style", "")
+    list_guide_style = styles.get(list_guide_style_name, "default") # Use loaded style
     indent_width = 2; max_list_levels_styled = 10
     default_style_name = style_mapping.get("default_text", "style_default")
-    default_style = styles.get(default_style_name, "default")
+    default_style = styles.get(default_style_name, "default") # Use loaded style
     lines = text_content.splitlines()
     code_fence_rule = compiled_rules.get("code_block_fence")
     blockquote_rule = compiled_rules.get("blockquote_start")
@@ -349,8 +399,8 @@ def apply_styles(
             panel_border_style_name=blockquote_config.get("panel_border_style", "default")
             content_style_name=blockquote_config.get("content_style", "default")
             panel_padding_config=blockquote_config.get("panel_padding")
-            panel_border_style=styles.get(panel_border_style_name, "default")
-            content_style_str=styles.get(content_style_name, "default") # Get style string
+            panel_border_style=styles.get(panel_border_style_name, "default") # Use loaded style
+            content_style_str=styles.get(content_style_name, "default") # Use loaded style
             panel_padding=get_panel_padding(panel_padding_config)
             quote_str="\n".join(blockquote_content)
             try:
@@ -373,8 +423,8 @@ def apply_styles(
             panel_title_style_name=code_block_config.get("panel_title_style", "default")
             syntax_theme=code_block_config.get("syntax_theme", "default")
             panel_padding_config=code_block_config.get("panel_padding")
-            panel_border_style=styles.get(panel_border_style_name, "default")
-            panel_title_style=styles.get(panel_title_style_name, "default")
+            panel_border_style=styles.get(panel_border_style_name, "default") # Use loaded style
+            panel_title_style=styles.get(panel_title_style_name, "default") # Use loaded style
             panel_padding=get_panel_padding(panel_padding_config)
             code_str="\n".join(code_block_content)
             renderable_content: object
@@ -391,14 +441,15 @@ def apply_styles(
             if can_highlight:
                 renderable_content = Syntax(code_str, code_block_language, theme=syntax_theme, line_numbers=False, word_wrap=False, background_color="default", dedent=False)
             else:
-                renderable_content = Text(code_str, style="default") # Code blocks use default term style
+                # Use default style for non-highlighted code text
+                renderable_content = Text(code_str, style=styles.get("style_default", "default"))
 
             panel = Panel(renderable_content, title=code_block_language if code_block_language != "default" else None, title_align="left", border_style=panel_border_style, padding=panel_padding)
             if panel.title:
                 try:
                     panel.title = Text(str(panel.title), style=Style.parse(panel_title_style))
                 except StyleSyntaxError:
-                    panel.title = Text(str(panel.title), style="default")
+                    panel.title = Text(str(panel.title), style="default") # Fallback title style
             renderables.append(panel)
         # Reset state regardless of content
         in_code_block = False
@@ -432,52 +483,77 @@ def apply_styles(
             if not in_blockquote:
                 in_blockquote = True
                 blockquote_content = []
+            # Strip the ">" prefix before adding
             quote_line_content = re.sub(r"^\s*>\s?", "", line)
             blockquote_content.append(quote_line_content)
             continue
         elif in_blockquote:
              finalize_blockquote() # Finalize if current line is NOT a quote line
 
-        # 5.5.3. List Trees (Corrected try/except)
+        # 5.5.3. List Trees
         list_match = None; is_bullet = False
         if list_bullet_rule and (match := list_bullet_rule.match(line)): list_match = match; is_bullet = True;
         if not list_match and list_numbered_rule and (match := list_numbered_rule.match(line)): list_match = match; is_bullet = False;
 
         if list_match:
+            # Make sure to finalize other blocks if starting a list
+            if in_blockquote: finalize_blockquote() # Should be handled above, but defensive check
+            # --- List Processing Logic ---
             base_style_key = "list_item_bullet" if is_bullet else "list_item_numbered"; base_style_name = style_mapping.get(base_style_key)
             if base_style_name and isinstance(base_style_name, str) and len(list_match.groups()) >= 2:
                 indent_str = list_match.group(1); content_str = list_match.group(2); current_level = get_indent_level(indent_str + (" " if is_bullet else "  "), indent_width)
-                if not in_list_block: in_list_block = True; current_tree = Tree("", guide_style=list_guide_style); node_stack = [(-1, current_tree)];
-                while node_stack and node_stack[-1][0] >= current_level: node_stack.pop()
-                if not node_stack:
+
+                if not in_list_block: # Starting a new list block
+                    in_list_block = True
+                    current_tree = Tree("", guide_style=list_guide_style)
+                    node_stack = [(-1, current_tree)] # Add root node at level -1
+
+                # Find the correct parent node based on indentation level
+                while node_stack and node_stack[-1][0] >= current_level:
+                    node_stack.pop()
+
+                if not node_stack: # Error condition: popped too much?
                     if debug: print(f"DEBUG Warning: List parsing error - node stack empty for line: {line}", file=sys.stderr);
-                    finalize_tree(); # Reset state
+                    finalize_tree(); # Reset state and treat as default line
                     # Fall through to default handling below this 'if list_match' block
                 else:
-                    parent_level, parent_node = node_stack[-1]; level0_style = styles.get(f"{base_style_name}0", default_style); level_idx = current_level % max_list_levels_styled; style_name = f"{base_style_name}{level_idx}"; content_style_str = styles.get(style_name, level0_style)
+                    # Add to the parent node found
+                    parent_level, parent_node = node_stack[-1]
+                    # Determine the style for this level
+                    level0_style = styles.get(f"{base_style_name}0", default_style)
+                    level_idx = current_level % max_list_levels_styled
+                    style_name = f"{base_style_name}{level_idx}"
+                    content_style_str = styles.get(style_name, level0_style) # Use loaded style
+
                     try:
                         node_label: Text
                         text_to_process = ""
                         if keep_markup:
                             list_prefix = ""
-                            # --- Corrected Try/Except Block ---
                             try:
-                                list_prefix = line.lstrip(" ")[: line.lstrip(" ").find(content_str)].rstrip() + " "
+                                # Find prefix reliably
+                                marker_pos = line.find(content_str)
+                                if marker_pos != -1:
+                                   list_prefix = line[:marker_pos].lstrip(" ") # Get text between indent and content
+                                else:
+                                   list_prefix = ("* " if is_bullet else "1. ") # Fallback prefix
                             except ValueError:
-                                pass # Ignore if content not found, prefix remains empty
+                                list_prefix = ("* " if is_bullet else "1. ") # Fallback prefix
                             text_to_process = indent_str + list_prefix + content_str
-                            # --- End Corrected Block ---
                         else:
-                             text_to_process = content_str; # Just use content if not keeping markup
+                             text_to_process = content_str # Just use content if not keeping markup
 
+                        # Process inline markup for the list item content
                         node_label = process_inline_markup(text_to_process, content_style_str, styles, compiled_rules)
+
+                        # Add the new node to the tree
                         new_node = parent_node.add(node_label)
                         node_stack.append((current_level, new_node))
-                        matched_line = True # Mark line as handled
+                        # Line successfully handled as a list item
                         continue # Go to next line immediately
                     except Exception as e:
-                        # Keep error print unconditional
                         print(f"ERROR: Adding node to tree for line '{line}': {e}", file=sys.stderr)
+                        traceback.print_exc(file=sys.stderr) # More detail on error
                         finalize_tree() # Reset state and fall through
             else: # Regex matched but invalid mapping or groups
                  if debug: print(f"DEBUG Warning: List regex matched but groups/mapping invalid: {line[:50]}...", file=sys.stderr)
@@ -487,8 +563,11 @@ def apply_styles(
              finalize_tree()
 
 
-        # 5.5.4. Handle Non-Block, Non-List Lines
-        matched_line = False; header_match_handled = False
+        # 5.5.4. Handle Non-Block, Non-List Lines (Headers, HR, etc.)
+        matched_line = False # Reset match flag for each line
+
+        # Check Headers
+        header_match_handled = False
         if header_numbered_rule and (match := header_numbered_rule.match(line)):
             style_name = style_mapping.get("header_numbered"); style_str = styles.get(style_name, default_style)
             text_to_process = line if keep_markup else f"{match.group(1)}. {match.group(2)}"
@@ -506,29 +585,43 @@ def apply_styles(
              text_to_process = line if keep_markup else match.group(1)
              renderables.append(process_inline_markup(text_to_process, style_str, styles, compiled_rules)); matched_line = True; header_match_handled = True
 
+        # Check Horizontal Rule (only if not already matched as header)
         if not header_match_handled and hr_rule and hr_rule.match(line):
             hr_style_name = style_mapping.get("horizontal_rule", "default"); hr_style = styles.get(hr_style_name, "default"); renderables.append(Rule(style=hr_style)); matched_line = True;
 
+        # Check Other Generic Line Rules (only if not matched above)
         if not matched_line:
+             # Define rules to skip in this generic loop more robustly
+             skipped_rules = {
+                 "code_block_fence", "blockquote_start", "list_item_bullet", "list_item_numbered",
+                 "header_numbered", "header1", "header2", "header3", "horizontal_rule",
+                 "inline_bold_star", "inline_bold_under", "inline_italic_star", "inline_italic_under", "inline_code"
+             }
              for name, pattern in compiled_rules.items():
-                 # Skip special + inline rules in this generic loop
-                 if name in ["code_block_fence", "blockquote_start", "list_item_bullet", "list_item_numbered", "header_numbered", "header1", "header2", "header3", "horizontal_rule", "inline_bold_star", "inline_bold_under", "inline_italic_star", "inline_italic_under", "inline_code"] or pattern is None: continue;
+                 if name in skipped_rules or pattern is None: continue;
                  match = pattern.match(line)
                  if match:
                      mapping_value = style_mapping.get(name)
                      if isinstance(mapping_value, str) and (style_str := styles.get(mapping_value)):
-                          renderables.append(process_inline_markup(line, style_str, styles, compiled_rules)); matched_line = True; break;
-        # 5.5.5. Default Fallback
+                          renderables.append(process_inline_markup(line, style_str, styles, compiled_rules)); matched_line = True; break; # Break after first match
+                     else:
+                         if debug: print(f"DEBUG Warning: Rule '{name}' matched but no valid style mapping found.", file=sys.stderr)
+                         # Decide: Fall through to default or handle explicitly? Let's fall through.
+
+        # 5.5.5. Default Fallback Handler
         if not matched_line:
+             # Apply default style and process inline markup for any remaining lines
              renderables.append(process_inline_markup(line, default_style, styles, compiled_rules))
 
-    # 5.6. End of Input Finalization
+    # 5.6. End of Input Finalization (handle blocks that might be open)
     if in_list_block: finalize_tree();
     if in_blockquote:
-        if debug: print("DEBUG Warning: Input ended inside blockquote.", file=sys.stderr);
+        # This shouldn't happen with correct logic, but as a safeguard
+        if debug: print("DEBUG Warning: Input ended unexpectedly inside blockquote.", file=sys.stderr);
         finalize_blockquote();
     if in_code_block:
-        if debug: print("DEBUG Warning: Input ended inside code block.", file=sys.stderr);
+        # This is common if the closing fence ``` is missing
+        if debug: print("DEBUG Warning: Input ended unexpectedly inside code block (missing closing fence?).", file=sys.stderr);
         finalize_code_block();
 
     # 5.7. Print All Renderables
@@ -539,20 +632,82 @@ def apply_styles(
 # 6. Main Execution Block
 # ==============================================================================
 def main():
-    parser = argparse.ArgumentParser(description="Apply styles to text input.", formatter_class=argparse.ArgumentDefaultsHelpFormatter,)
-    parser.add_argument("--config-dir", default="~/.config/llm-style", help="Config directory.")
-    parser.add_argument("--debug", action="store_true", help="Enable debug/verbose output to stderr.")
-    parser.add_argument("--keep-markup", action="store_true", help="Keep original Markdown block characters.")
+    parser = argparse.ArgumentParser(
+        description="Apply styles to text input based on configurable rules.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--config-dir",
+        default="~/.config/llm-style",
+        help="Directory containing detection.json, mapping.json, and style JSON files."
+    )
+    parser.add_argument(
+        "--style",
+        default="styles.json",
+        help="Filename of the style definitions JSON file (e.g., 'styles.json', 'calm-styles.json') within the config directory."
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug/verbose output to stderr."
+    )
+    parser.add_argument(
+        "--keep-markup",
+        action="store_true",
+        help="Keep original Markdown block characters (e.g., '#', '*', '>') in the output."
+    )
     args = parser.parse_args()
-    if sys.stdin.isatty(): print("Usage: <command> | llm-style.py [--config-dir <path>] [--debug] [--keep-markup]", file=sys.stderr,); sys.exit(1)
-    try: compiled_rules, style_mapping, styles = load_all_configs(args.config_dir, debug=args.debug)
-    except SystemExit: sys.exit(1)
-    except Exception as e: print(f"Unexpected error loading/validating config: {e}", file=sys.stderr); traceback.print_exc(); sys.exit(1)
-    try: input_text = sys.stdin.read()
-    except Exception as e: print(f"Error reading stdin: {e}", file=sys.stderr); sys.exit(1)
+
+    # Check if input is from TTY (likely interactive use without pipe)
+    if sys.stdin.isatty() and not args.debug: # Allow debug mode even with TTY for config testing
+        parser.print_usage(file=sys.stderr)
+        print("Error: Input must be piped from another command.", file=sys.stderr)
+        print("Example: llm 'prompt' | llm-style.py", file=sys.stderr)
+        sys.exit(1)
+
+    # Load configurations using the specified style file
+    try:
+        compiled_rules, style_mapping, styles = load_all_configs(
+            args.config_dir,
+            args.style, # Pass the style filename
+            debug=args.debug
+        )
+    except SystemExit: # Handle exits from config loading/validation
+        sys.exit(1)
+    except Exception as e:
+        print(f"FATAL: Unexpected error loading/validating configuration: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1)
+
+    # Read input from stdin
+    try:
+        input_text = sys.stdin.read()
+    except Exception as e:
+        print(f"Error reading standard input: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Apply styles and print
     console = Console()
-    try: apply_styles(input_text, compiled_rules, style_mapping, styles, console, debug=args.debug, keep_markup=args.keep_markup)
-    except Exception as e: print(f"\n--- Unexpected Error During Styling ---", file=sys.stderr); print(f"Error: {e}", file=sys.stderr); print(f"Input text or styling logic problematic.", file=sys.stderr); traceback.print_exc(); print(f"--- Raw Input Trace: ---", file=sys.stderr); print(input_text); sys.exit(1)
+    try:
+        apply_styles(
+            input_text,
+            compiled_rules,
+            style_mapping,
+            styles,
+            console,
+            debug=args.debug,
+            keep_markup=args.keep_markup
+        )
+    except Exception as e:
+        # Catch unexpected errors during the styling process
+        print(f"\n--- Unexpected Error During Styling ---", file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
+        print(f"This might indicate an issue with the input text structure or a bug in the styling logic.", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        # Optionally print raw input for debugging
+        # print(f"\n--- Raw Input Trace: ---", file=sys.stderr)
+        # print(input_text, file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
