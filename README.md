@@ -17,7 +17,7 @@ Rich terminal styling for Markdown-like LLM output using panels, trees, inline s
 
 <figure>
 <img src="example.png" alt="example.png" />
-<figcaption><em>(Above: Example using the new default 'adaptive' style theme on a dark terminal. While aiming for legibility on both light and dark backgrounds, colors like yellow/cyan may appear bright. Consider a dark-specific theme for better aesthetics if you primarily use a dark terminal.)</em></figcaption>
+<figcaption><em>(Above: Example using the default 'adaptive'/hybrid style theme on a dark terminal. While aiming for legibility on both light and dark backgrounds, colors like yellow/cyan may appear bright. Consider a dark-specific theme for better aesthetics if you primarily use a dark terminal.)</em></figcaption>
 </figure>
 
 ## Motivation

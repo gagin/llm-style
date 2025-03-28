@@ -18,9 +18,9 @@ Rich terminal styling for Markdown-like LLM output using panels, trees, inline s
    *(Above: Example using the ``tan-crazybold-style.json`` theme. The "crazy" reverse video for bold is intentional for high contrast.)*
 
 .. figure:: example.png
-   :alt: Example showing the new default adaptive style on a dark terminal.
+   :alt: Example showing the default adaptive/hybrid style on a dark terminal.
 
-   *(Above: Example using the new default 'adaptive' style theme on a dark terminal. While aiming for legibility on both light and dark backgrounds, colors like yellow/cyan may appear bright. Consider a dark-specific theme for better aesthetics if you primarily use a dark terminal.)*
+   *(Above: Example using the default 'adaptive'/hybrid style theme on a dark terminal. While aiming for legibility on both light and dark backgrounds, colors like yellow/cyan may appear bright. Consider a dark-specific theme for better aesthetics if you primarily use a dark terminal.)*
 
 
 Motivation
