@@ -1,0 +1,21 @@
+{
+  "style_code_panel_border": "dim blue",
+  "style_code_panel_title": "italic blue",
+  "style_quote_panel_border": "dim yellow",
+  "style_blockquote_content": "italic yellow",
+  "style_list_guide": "dim cyan",
+  "style_header_numbered": "bold magenta",
+  "style_header1": "bold bright_blue underline",
+  "style_header2": "bold blue",
+  "style_header3": "bold cyan",
+  "style_hr": "dim",
+  "style_key_value_line": "default",
+  "style_list_level0": "green",
+  "style_list_level1": "light_sea_green",
+  "style_list_level2": "medium_spring_green",
+  "style_list_level3": "spring_green1",
+  "style_inline_bold": "bold",
+  "style_inline_italic": "italic",
+  "style_inline_code": "bright_black on grey30",
+  "style_default": "tan"
+}

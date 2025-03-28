@@ -1,0 +1,31 @@
+{
+    "style_code_panel_border": "dim dark_goldenrod",
+    "style_code_panel_title": "italic dark_goldenrod",
+    "style_quote_panel_border": "dim color(130)",  
+    "style_blockquote_content": "italic color(130)", 
+    "style_list_guide": "dim color(131)",       
+
+    "style_header_numbered": "bold orange1",
+    "style_header1": "bold bright_yellow underline",
+    "style_header2": "bold gold1",
+    "style_header3": "bold dark_orange",
+    "style_hr": "dim tan",
+    "style_key_value_line": "default",
+
+    "style_list_level0": "yellow3",
+    "style_list_level1": "light_goldenrod1",
+    "style_list_level2": "khaki1",
+    "style_list_level3": "wheat1",
+    "style_list_level4": "yellow3",
+    "style_list_level5": "light_goldenrod1",
+    "style_list_level6": "khaki1",
+    "style_list_level7": "wheat1",
+    "style_list_level8": "yellow3",
+    "style_list_level9": "light_goldenrod1",
+
+    "style_inline_bold": "bold",
+    "style_inline_italic": "italic",
+    "style_inline_code": "gold1 on grey23",
+
+    "style_default": "tan"
+}
