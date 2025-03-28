@@ -12,16 +12,10 @@ llm-style: Rich Terminal Styling for LLM Output
 
 Rich terminal styling for Markdown-like LLM output using panels, trees, inline styles, dynamic color transformations, and configurable regex rules.
 
-.. figure:: example.png
+.. figure:: uglify.png
    :alt: Screenshot using tan-crazybold-style.json
 
    *(Above: Example using the ``tan-crazybold-style.json`` theme. The "crazy" reverse video for bold is intentional for high contrast.)*
-
-.. figure:: uglify.png
-   :alt: Screenshot showing list trees and headers (green theme)
-
-   *(Above: Example showing nested lists rendered as trees and styled headers using the default green theme.)*
-
 
 Motivation
 ----------

@@ -9,13 +9,8 @@
 Rich terminal styling for Markdown-like LLM output using panels, trees, inline styles, dynamic color transformations, and configurable regex rules.
 
 <figure>
-<img src="example.png" alt="example.png" />
-<figcaption><em>(Above: Example using the ``tan-crazybold-style.json`` theme. The "crazy" reverse video for bold is intentional for high contrast.)</em></figcaption>
-</figure>
-
-<figure>
 <img src="uglify.png" alt="uglify.png" />
-<figcaption><em>(Above: Example showing nested lists rendered as trees and styled headers using the default green theme.)</em></figcaption>
+<figcaption><em>(Above: Example using the ``tan-crazybold-style.json`` theme. The "crazy" reverse video for bold is intentional for high contrast.)</em></figcaption>
 </figure>
 
 ## Motivation
