@@ -16,7 +16,7 @@ Rich terminal styling for Markdown-like LLM output using panels, trees, inline s
 </figure>
 
 <figure>
-<img src="adaptive-default-on-dark.png" alt="adaptive-default-on-dark.png" />
+<img src="example.png" alt="example.png" />
 <figcaption><em>(Above: Example using the new default 'adaptive' style theme on a dark terminal. While aiming for legibility on both light and dark backgrounds, colors like yellow/cyan may appear bright. Consider a dark-specific theme for better aesthetics if you primarily use a dark terminal.)</em></figcaption>
 </figure>
 
@@ -381,7 +381,7 @@ The updated wrapper function introduces a special argument, `--llm-style <filena
 - It **removes** both `--llm-style` and `my-theme.json` from the arguments passed to the underlying `llm` executable.
 - It passes the specified `my-theme.json` to the `llm-style.py` script via its `--style` argument, overriding the default specified in `_LLM_STYLE_DEFAULT_FILE`.
 
-Example: .. code-block:: bash
+Example: .. code-block:: zsh
 
 > \# Uses the default style defined in the zsh function llm "Explain adaptiveness"
 >

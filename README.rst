@@ -17,7 +17,7 @@ Rich terminal styling for Markdown-like LLM output using panels, trees, inline s
 
    *(Above: Example using the ``tan-crazybold-style.json`` theme. The "crazy" reverse video for bold is intentional for high contrast.)*
 
-.. figure:: adaptive-default-on-dark.png
+.. figure:: example.png
    :alt: Example showing the new default adaptive style on a dark terminal.
 
    *(Above: Example using the new default 'adaptive' style theme on a dark terminal. While aiming for legibility on both light and dark backgrounds, colors like yellow/cyan may appear bright. Consider a dark-specific theme for better aesthetics if you primarily use a dark terminal.)*
@@ -426,7 +426,7 @@ The updated wrapper function introduces a special argument, ``--llm-style <filen
 - It passes the specified ``my-theme.json`` to the ``llm-style.py`` script via its ``--style`` argument, overriding the default specified in ``_LLM_STYLE_DEFAULT_FILE``.
 
 Example:
-.. code-block:: bash
+.. code-block:: zsh
 
    # Uses the default style defined in the zsh function
    llm "Explain adaptiveness"
