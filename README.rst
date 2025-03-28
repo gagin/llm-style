@@ -12,10 +12,10 @@ llm-style: Rich Terminal Styling for LLM Output
 
 Rich terminal styling for Markdown-like LLM output using panels, trees, inline styles, dynamic color transformations, and configurable regex rules.
 
-.. figure:: /path/to/screenshot.png
-   :alt: Screenshot showing styled LLM output
+.. figure:: example.png
+   :alt: Screenshot showing styled LLM output (tan-crazybold-style.json)
 
-   *(Add a screenshot here showing an example of styled output. Note: GitHub may not render this figure directive correctly.)*
+   *(Above: Example using the ``tan-crazybold-style.json`` theme. The "crazy" reverse video for bold is intentional for high contrast.)*
 
 
 Motivation
@@ -32,20 +32,20 @@ Key Features
 *   **Highly Configurable:** Uses simple JSON files for:
     *   `detection.json`: Define regex patterns to identify structures.
     *   `mapping.json`: Map detected structures to style names or block configurations.
-    *   `<style-file>.json` (e.g., `styles.json`, `calm-styles.json`): Define named styles using ``rich``'s powerful syntax, including dynamic transformations.
+    *   `<style-file>.json` (e.g., `styles.json`, `green-theme.json`): Define named styles using `rich`'s powerful syntax, including dynamic transformations.
 *   **Rich Output:** Leverages the ``rich`` library for:
     *   Colors (Truecolor, 256, basic).
     *   Styles (bold, italic, underline, dim, reverse, etc.).
-    *   Panel borders around code blocks and blockquotes.
-    *   Tree guide lines for nested lists.
+    *   **Panels:** Draws borders around code blocks and blockquotes.
+    *   **Trees:** Draws guide lines for nested lists.
     *   Syntax highlighting for code blocks (requires ``pygments``).
 *   **Dynamic Inline Styles:** Configure inline styles (like bold) to dynamically adjust color (brightness, saturation, hue) based on the surrounding text's color.
-*   **Style Themes:** Load different style definitions using the ``--style`` argument.
+*   **Style Themes:** Load different style definitions using the ``--style`` argument. The default is `styles.json`.
 *   **Flexible Detection:** Uses regex for primary structure detection, allowing custom rules beyond standard Markdown.
 *   **Pipeline Friendly:** Designed to be used in standard Unix pipelines (e.g., ``llm ... | llm-style.py``).
 *   **Shell Integration:** Optional shell function (Zsh example provided) to automatically pipe `llm` output.
 *   **Debug Mode:** Includes a ``--debug`` flag for verbose configuration loading/validation and transformation output.
-*   **Markup Preservation:** Optional ``--keep-markup`` flag to display original block markup characters (``#``, ``*``, ``**``).
+*   **Markup Preservation:** Optional ``--keep-markup`` flag to display original block markup characters (`#`, `*`, `**`).
 
 
 Installation
@@ -89,7 +89,7 @@ Usage
 
 **Basic Usage (Default Style):**
 
-Pipe the output of the ``llm`` command (or any text-producing command) into the script. This uses ``styles.json`` in your config directory (or creates a default one based on the script's internal green theme).
+Pipe the output of the ``llm`` command (or any text-producing command) into the script. This uses `styles.json` in your config directory (by default `~/.config/llm-style/`), creating it with a default green theme if it doesn't exist.
 
 .. code-block:: bash
 
@@ -99,12 +99,21 @@ Pipe the output of the ``llm`` command (or any text-producing command) into the 
 
 **Using a Specific Style Theme:**
 
-Use the ``--style`` argument to specify a different JSON file containing style definitions from your config directory.
+Use the ``--style`` argument to specify a different JSON file located within your config directory.
 
 .. code-block:: bash
 
     # Assuming you have ~/.config/llm-style/tan-crazybold-style.json
     llm "Pros and cons" | python llm-style.py --style tan-crazybold-style.json
+
+**Using a Local Style File (without copying):**
+
+You can use a style file from the current directory by setting the config directory to `.` *if* you also have `detection.json` and `mapping.json` present in the current directory (or you allow the script to create defaults there).
+
+.. code-block:: bash
+
+    # Assumes my-local-style.json, detection.json, mapping.json are in '.'
+    llm "Use local style" | python llm-style.py --config-dir . --style my-local-style.json
 
 **Using Shell Integration (Recommended for Convenience):**
 
@@ -123,24 +132,43 @@ If you've added the provided Zsh function (see "Shell Integration" section) to y
 
 **Debugging Configuration:**
 
+Redirect standard output to `/dev/null` and error/debug output to a file to isolate debug messages.
+
 .. code-block:: bash
 
     llm "Debug this" | python llm-style.py --debug --style my-debug-style.json > /dev/null 2> debug.log
 
 *(Note: Replace ``python llm-style.py`` with ``./llm-style.py`` if executable and in the correct path/directory).*
 
+``--help`` Output
+-----------------
+
+.. code-block:: text
+
+    usage: llm-style.py [-h] [--config-dir CONFIG_DIR] [--style STYLE] [--debug] [--keep-markup]
+
+    Apply styles to text input based on configurable rules.
+
+    options:
+      -h, --help            show this help message and exit
+      --config-dir CONFIG_DIR
+                            Directory containing detection.json, mapping.json, and style JSON files. (default: ~/.config/llm-style)
+      --style STYLE         Filename of the style definitions JSON file (e.g., 'styles.json', 'calm-styles.json') within the config directory. (default: styles.json)
+      --debug               Enable debug/verbose output to stderr. (default: False)
+      --keep-markup         Keep original Markdown block characters (e.g., '#', '*', '>') in the output. (default: False)
+
 
 Comparison with Other Tools
 ---------------------------
 
+*(This section remains largely the same - highlighting flexibility for "Markdown-like" text, unique rendering via Rich (Panels/Trees), and configuration)*
+
 Tools like `glow`_, `mdcat`_, and `bat`_ are excellent terminal Markdown renderers/viewers. Why use ``llm-style``?
 
-*   **Strictness:** Tools like ``glow`` or ``mdcat`` often expect reasonably valid CommonMark or GitHub Flavored Markdown. They might produce errors or poor formatting if the LLM output deviates significantly (e.g., inconsistent indentation, malformed lists, unusual syntax). ``llm-style`` uses regex and is designed to be more forgiving of "Markdown-like" text.
-*   **Flexibility vs. Robustness:** Standard Markdown renderers have robust parsers for *Markdown*, handling complex nesting and edge cases correctly, including inline formatting. ``llm-style``'s regex-based approach (especially for inline elements) is less robust for pure Markdown but offers the flexibility to style arbitrary, non-Markdown patterns defined in ``detection.json``.
-*   **Unique Rendering:** ``llm-style`` leverages ``rich`` features not typically found in standard Markdown viewers:
-    *   **Panels:** Draws borders around code blocks and blockquotes.
-    *   **Trees:** Draws guide lines for nested lists.
-*   **Configuration:** ``llm-style`` offers direct JSON configuration for detection patterns, style mapping, and `rich` styles, including dynamic transformations.
+*   **Strictness:** Tools like `glow` or `mdcat` often expect reasonably valid CommonMark or GitHub Flavored Markdown... `llm-style` uses regex and is designed to be more forgiving...
+*   **Flexibility vs. Robustness:** Standard Markdown renderers have robust parsers... `llm-style`'s regex-based approach... offers the flexibility to style arbitrary, non-Markdown patterns...
+*   **Unique Rendering:** `llm-style` leverages ``rich`` features... Panels... Trees...
+*   **Configuration:** `llm-style` offers direct JSON configuration... including dynamic transformations.
 
 **Choose ``llm-style`` if:**
 
@@ -153,8 +181,8 @@ Tools like `glow`_, `mdcat`_, and `bat`_ are excellent terminal Markdown rendere
 **Choose standard tools (``glow``, ``bat``, ``mdcat``) if:**
 
 *   Your input is reliably well-formed Markdown.
-*   Robust handling of all Markdown features (especially complex inline/nested elements) is the top priority.
-*   You prefer using existing theme ecosystems (e.g., for ``bat``).
+*   Robust handling of all Markdown features... is the top priority.
+*   You prefer using existing theme ecosystems...
 
 .. _glow: https://github.com/charmbracelet/glow
 .. _mdcat: https://github.com/swsnr/mdcat
@@ -180,8 +208,8 @@ The styles defined in your style JSON file use the syntax understood by the `ric
 
 **How to Specify Colors:**
 
-1.  **Standard Color Names:** Use common names like ``"red"``, ``"green"``, ``"blue"``, ``"yellow"``, ``"magenta"``, ``"cyan"``, ``"white"``, ``"black"``, and other W3C names like ``"tan"``, ``"wheat"``, ``"lightblue"``, ``"purple"``. Hex codes are generally more reliable than less common names.
-2.  **Hex Codes (Truecolor):** For terminals supporting Truecolor (most modern ones), use CSS-style hex codes. Example: ``"#FFA500"`` (Orange), ``"#A0522D"`` (Sienna).
+1.  **Standard Color Names:** Use common names like ``"red"``, ``"green"``, ``"blue"``, ``"yellow"``, ``"magenta"``, ``"cyan"``, ``"white"``, ``"black"``. Hex codes are generally more reliable than less common names.
+2.  **Hex Codes (Truecolor):** Recommended for specific colors if your terminal supports Truecolor. Example: ``"#FFA500"`` (Orange), ``"#A0522D"`` (Sienna).
 3.  **RGB Tuples (Truecolor):** Specify RGB values from 0-255. Example: ``"rgb(255,165,0)"``.
 4.  **Numbered Colors (256-Color Terminals):** Use numbers 0-255. Example: ``"color(178)"`` (Gold/Orange).
 
@@ -231,29 +259,24 @@ You can define these styles in two ways:
         }
 
     *   `"attributes"`: (String) Basic `rich` style attributes (e.g., `"bold"`, `"bold underline"`).
-    *   `"transform"`: (Object, Optional) Rules for color modification:
-        *   `"adjust_brightness"`: (Float) Multiplier for brightness (HSL Lightness). `1.0` = no change, `1.2` = 20% brighter, `0.8` = 20% dimmer. Values significantly > 1.0 may clip towards white.
-        *   `"adjust_saturation"`: (Float) Multiplier for saturation (HSL Saturation). `1.0` = no change, `1.2` = 20% more saturated, `0.8` = 20% less saturated (more grey).
-        *   `"shift_hue"`: (Float) Degrees to shift hue on the color wheel (0-360). Positive values shift typically towards red/orange/yellow, negative towards purple/blue/cyan (depends on start hue).
+    *   `"transform"`: (Object, Optional) Rules for color modification (`adjust_brightness`, `adjust_saturation`, `shift_hue`). See details in the source code or previous README versions if needed.
 
-    **How it works:** The script gets the color of the text surrounding the inline element (the "base color"). If a `transform` object is defined, it attempts to convert the base color to RGB, then to HSL, applies the adjustments, converts back to RGB, and uses this *new* color along with the defined `attributes`. If the base color cannot be reliably converted to RGB (e.g., "default" or system colors), the transformation is skipped, and only the defined `attributes` are applied (inheriting the base color). See the note below regarding potential issues.
+    **How it works:** The script gets the base color. If a `transform` object is defined, it attempts HSL adjustments and uses the *new* color with the defined `attributes`. If transformation fails (e.g., base color unusable), only `attributes` are applied.
+
+**Important Note:** Inline styling (including transformations) is **not** applied within fenced code blocks (``` ```). The content of code blocks is treated literally to preserve code structure and syntax.
 
 
 A Note on Color Transformations and `rich` / Environment Issues
 -------------------------------------------------------------
 
-The dynamic color transformation feature relies on:
-1. The `colorsys` standard Python library module.
-2. The ability to reliably get an RGB representation of the "base color" from the `rich.color.Color` object provided by the parsed base style.
+*(This section remains largely the same - explains the dependency on `colorsys` and RGB conversion, the observed AttributeErrors, the integer-value workaround in the script, and recommends checking environment/reinstalling rich if issues persist)*
 
-During development, peculiar `AttributeError`s related to `rich.color.ColorType.RGB` and `rich.color.ColorType.SYSTEM` were encountered, even when using recent versions of `rich` (e.g., 13.9.x) in certain environments (specifically observed within a Conda setup). This occurred despite these attributes being present in the library's source code and documentation. The root cause likely relates to environment inconsistencies or how Python modules are loaded/shadowed.
-
-**The Workaround:** The `_apply_transform` function in `llm-style.py` includes a workaround that avoids directly referencing `ColorType.RGB` or `ColorType.SYSTEM` attributes by name. Instead, it checks the integer value of the color type (`int(base_color.type)`) against expected standard values (e.g., `3` for `TRUECOLOR`, `0` for `DEFAULT`, `1` for `SYSTEM`) or accesses the `.triplet` attribute directly when the type is known to be `TRUECOLOR`. It also includes error handling in case `get_truecolor()` fails internally due to related issues.
+... The `_apply_transform` function in `llm-style.py` includes a workaround that avoids directly referencing `ColorType.RGB` or `ColorType.SYSTEM` attributes by name. Instead, it checks the integer value of the color type (`int(base_color.type)`)...
 
 **Caveats:**
-*   This workaround relies on the internal integer values of `ColorType` members remaining consistent with standard `rich` versions. Significant changes in `rich`'s internal enum structure could break this workaround.
-*   Transformations may still fail if `get_truecolor()` cannot resolve certain base colors (like `STANDARD` names or complex definitions) to RGB.
-*   If you encounter persistent issues with transformations failing (check `--debug` output, look for warnings about failing to get RGB or apply transforms), the most robust solution is often to ensure a clean Python environment (e.g., a fresh virtual environment or Conda environment) with a cleanly installed `rich` library (`pip install --force-reinstall "rich>=13.0"`).
+*   This workaround relies on internal integer values...
+*   Transformations may still fail if `get_truecolor()` cannot resolve certain base colors...
+*   If you encounter persistent issues... ensure a clean Python environment... (`pip install --force-reinstall "rich>=13.0"`).
 
 
 Shell Integration (Optional)
@@ -286,7 +309,7 @@ This function overrides the default `llm` command.
       # Check if style script exists and is runnable
       # Use -f to check if it's a regular file and -r for readable OR -x for executable
       if [[ ! -f "$_LLM_STYLE_SCRIPT_PATH" || (! -r "$_LLM_STYLE_SCRIPT_PATH" && ! -x "$_LLM_STYLE_SCRIPT_PATH") ]]; then
-         echo "Zsh Warning: llm-style script not found or not readable/executable at '$_LLM_STYLE_SCRIPT_PATH'. Running 'llm' without styling." >&2
+         echo "Zsh Warning: llm-style script not found/runnable at '$_LLM_STYLE_SCRIPT_PATH'. Running 'llm' without styling." >&2
          command llm "$@" # Run original llm directly as fallback
          return $?
       fi
@@ -295,6 +318,7 @@ This function overrides the default `llm` command.
       # Ensure python executable is correct (e.g., python3 or just python)
       command llm "$@" | python "$_LLM_STYLE_SCRIPT_PATH" --style "$_LLM_STYLE_DEFAULT_FILE"
       # Preserve the exit status of the pipe (Zsh specific: index 2 is the python script)
+      # For Bash, use: return ${PIPESTATUS[1]}
       return ${pipestatus[2]}
     }
 
@@ -316,43 +340,27 @@ Now, running `llm "your prompt"` will automatically apply the styling using your
    ``\llm "your prompt"``
 
 
-GitHub Rendering Note
----------------------
-
-Please be aware that GitHub's rendering of reStructuredText (`.rst`) files has known limitations compared to standard tools like Sphinx or the output generated by this script in your terminal. Complex nested lists or certain directives (like `.. figure::` or `.. epigraph::`) might not display as intended on GitHub.
-
-**For the best rendering experience *on GitHub*, consider converting this README to Markdown (`README.md`).**
-
-
 Limitations
 -----------
 
-*   **Inline Parsing:** The current inline parsing (for bold, italic, code) uses regex and is basic. It may not correctly handle complex nesting or edge cases found in full Markdown implementations (e.g., bold inside italic within a link).
-*   **Regex Dependency:** The quality of the output heavily depends on the accuracy and comprehensiveness of the regex patterns in `detection.json`. Poorly written regexes can lead to misidentified structures.
-*   **Block State Machine:** The logic for handling code blocks, blockquotes, and lists is relatively simple and might break on complex, interleaved, or malformed structures.
-*   **Color Transformation Robustness:** Dynamic color transformation depends on reliably getting RGB values and may fail for certain base color types or due to environment issues (see note above).
-*   **Performance:** While generally performant for typical LLM output sizes, extremely large inputs might experience slower processing due to the regex and line-by-line state management.
+*   **Inline Parsing:** Basic regex parsing may fail on complex nested Markdown (e.g., bold inside italic within a link).
+*   **Inline Styles in Code Blocks:** Inline Markdown formatting (like bold, italic, or transformations) is **not** applied within fenced code blocks (``` ```) as their content is treated literally.
+*   **Regex Dependency:** Output quality depends heavily on `detection.json` patterns.
+*   **Block State Machine:** Simple logic may break on complex, interleaved, or malformed block structures (code, quotes, lists).
+*   **Color Transformation Robustness:** See note above regarding environment issues and base color conversion limitations.
+*   **Performance:** Very large inputs might experience slower processing.
 
 
 Future Development
 ------------------
 
-*   **Testing:** Implement a robust test suite, particularly focusing on edge cases, different transformation inputs, and "weird" text inputs to improve parsing robustness.
-*   **`llm` Plugin:** Develop an official plugin for Simon Willison's ``llm`` tool for seamless integration (e.g., ``llm ... --format=llm-style``).
-*   **Enhanced Inline Parsing:** Investigate more robust methods for handling inline markup, potentially using a more advanced regex approach or a limited custom parser (balancing flexibility with complexity).
-*   **Configuration Options:**
-    *   Make list indentation width configurable.
-    *   Allow customization of Tree guide characters.
-    *   Expose more Panel options (padding, title alignment) via `mapping.json`.
-*   **More Structure Detection:** Add rules and logic to detect and style other common elements like tables or definition lists if feasible with the line-based approach.
-*   **Performance Profiling:** Analyze performance on large inputs and optimize if necessary.
-*   **Documentation:** Improve documentation for creating custom configurations, especially around style transformations and troubleshooting.
-
-
-Contributing
-------------
-
-Contributions, issues, and feature requests are welcome! Please check the GitHub repository issues section at https://github.com/gagin/llm-style/issues.
+*   **Testing:** Implement a robust test suite, focusing on edge cases, transformations, and parsing robustness.
+*   **`llm` Plugin:** Develop an official plugin for Simon Willison's ``llm`` tool.
+*   **Enhanced Inline Parsing:** Investigate more robust methods for handling inline markup.
+*   **Configuration Options:** Configurable list indent width, guide chars, more Panel options.
+*   **More Structure Detection:** Add rules for tables, definition lists if feasible.
+*   **Performance Profiling:** Analyze and optimize for large inputs.
+*   **Documentation:** Improve config/transform docs and troubleshooting guides.
 
 
 Credits

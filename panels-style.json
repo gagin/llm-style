@@ -1,0 +1,40 @@
+{
+    "style_code_panel_border": "bold bright_cyan",
+    "style_code_panel_title": "italic bright_cyan on #101030",
+    "style_quote_panel_border": "bold yellow",
+    "style_blockquote_content": "italic yellow",
+
+    "style_list_guide": "dim blue",
+
+    "style_header_numbered": "bold #FF6347",
+    "style_header1": "bold #F0E68C underline",
+    "style_header2": "bold #ADD8E6",
+    "style_header3": "bold #90EE90",
+    "style_hr": "dim #777777",
+    "style_key_value_line": "default",
+
+    "style_list_level0": "#AFEEEE",
+    "style_list_level1": "#7FFFD4",
+    "style_list_level2": "#40E0D0",
+    "style_list_level3": "#48D1CC",
+    "style_list_level4": "#AFEEEE",
+    "style_list_level5": "#7FFFD4",
+    "style_list_level6": "#40E0D0",
+    "style_list_level7": "#48D1CC",
+    "style_list_level8": "#AFEEEE",
+    "style_list_level9": "#7FFFD4",
+
+    "style_inline_italic": "italic",
+
+    "style_inline_bold": {
+      "attributes": "bold",
+      "transform": {
+        "adjust_brightness": 1.2,
+        "adjust_saturation": 1.1
+      }
+    },
+
+    "style_inline_code": "#E0E0E0 on #444444",
+
+    "style_default": "#CCCCCC"
+}

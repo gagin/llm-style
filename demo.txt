@@ -1,0 +1,79 @@
+Okay, here's a markdown-like demo text designed to showcase your colorization tool's ability to handle panels, bolds, italics, nested lists, and inline markup:
+
+```markdown
+## Demonstration of Markdown Coloring
+
+Here's a quick demo to show how your tool can handle various Markdown elements. This includes:
+
+**1. Panels & Emphasis:**
+
+```
+Note: This is a panel!  It should be color-coded distinctively.  
+  *   Like this nested li within the panel   *and* **bolded here** ...
+```
+
+This is an **important** section.  The `panel` above highlights content, which you can style differently with color, I believe.  You can also use *italics*, and **bold**.
+
+**2. Lists & Inline elements:**
+
+A simple list:
+
+1.  Item one.
+2.  *Item two, with an item that is italicized*.
+3.  **Item three, with inline bold.**  And some *more italics* and a mix and match.
+    1. Nested item a.
+    2. Nested item b, with a [link](https://example.com).
+           * **Even deeper nest:** and still colored!
+    3.  Nested item c *with italics.*
+
+**3. Code Blocks (Optional, but good to include for completeness):**
+
+Here's a code block:
+
+```python
+def hello_world():
+  print("Hello, world!")
+```
+
+This is the end of our demonstration.  Hopefully, the different highlighting will work as I describe! Enjoy!
+```
+
+**Explanation of Features and Colorization Hints:**
+
+*   **Panels (e.g., the `Note:` block):** These can be rendered with a background color and border for emphasis, so that users feel it's an important remark.
+*   **Bold (`**`):**  Highlight important text with a bold font weight and a specific color for importance -- maybe orange (warning) or something darker.
+*   **Italics (`*`):** Emphasize text with italics and a subtle color. This could be a lighter shade than the bold.
+*   **Nested Lists with inline Markdown:**  The list items should maintain bullet points. Items should remain in the same style even when nesting and *mixed*.
+*   **Links (`[text](url)`):**  These links should be colored in a specific way, possibly with an underline to mimic a hyperlink.
+*   **Code Blocks (````):**  Code blocks are also good to have as they should styled differently based on their content to make it easier to read.
+*   **General Textflow:** Make sure the inline formatting doesn't create conflicts or break the expected flow.
+
+This demo text should give your tool a good workout!  Good luck!
+
+# Panel Showcase Example
+
+This document demonstrates how `llm-style.py` uses `rich.panel.Panel` to render code blocks and blockquotes, especially with the `panel-showcase-style.json`.
+
+## Code Blocks
+
+Panels are used for code blocks fenced by triple backticks.
+
+### Code Block with Language Hint
+
+If a language is specified after the opening fence, it should appear as the panel title, styled according to `style_code_panel_title`. The syntax highlighting inside depends on `pygments`.
+
+```python
+import sys
+from rich.console import Console
+
+console = Console()
+
+def greet(name: str):
+  """Greets the user."""
+  if not name:
+    console.print("[bold red]Error:[/bold red] Name cannot be empty!")
+    sys.exit(1)
+  console.print(f"Hello, [bold cyan]{name}[/bold cyan]! Welcome.")
+
+if __name__ == "__main__":
+  greet("Panel User")
