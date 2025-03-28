@@ -14,7 +14,7 @@ Rich terminal styling for Markdown-like LLM output using panels, trees, inline s
 </figure>
 
 <figure>
-<img src="example2.png" alt="example2.png" />
+<img src="uglify.png" alt="uglify.png" />
 <figcaption><em>(Above: Example showing nested lists rendered as trees and styled headers using the default green theme.)</em></figcaption>
 </figure>
 
@@ -105,15 +105,15 @@ llm "Pros and cons" | python llm-style.py --style tan-crazybold-style.json
 
 **Using a Local Style File (without copying):**
 
-You can use a style file from the current directory by setting the config directory to <span class="title-ref">.</span> **if** you also have <span class="title-ref">detection.json</span> and <span class="title-ref">mapping.json</span> present in the current directory (or you allow the script to create defaults there). This relies on the script finding the core config files locally. The script also attempts to load <span class="title-ref">--style</span> as a direct path if it's absolute or exists relative to the current directory.
+You can use a style file by providing a relative or absolute path. If the path exists, it will be loaded directly. You can also use `--config-dir .` to make the script look for <span class="title-ref">detection.json</span> and <span class="title-ref">mapping.json</span> in the current directory.
 
 ``` bash
-# Assumes my-local-style.json exists in '.'
-# Allows detection.json/mapping.json to be created in '.' if missing
-llm "Use local style" | python llm-style.py --config-dir . --style my-local-style.json
-
 # Attempts to load style directly by path (relative or absolute)
 llm "Use path style" | python llm-style.py --style ./path/to/my-style.json
+
+# Use style from current dir, look for other configs in current dir too
+# Allows detection.json/mapping.json to be created in '.' if missing
+llm "Use local style" | python llm-style.py --config-dir . --style my-local-style.json
 ```
 
 **Using Shell Integration (Recommended for Convenience):**
@@ -159,46 +159,7 @@ options:
 
 ## Showcase Script (<span class="title-ref">showcase-brief.sh</span>)
 
-To quickly compare multiple <span class="title-ref">\*style.json</span> or <span class="title-ref">\*styles.json</span> files located in the current directory, you can use a helper script like this:
-
-``` bash
-#!/bin/bash
-# showcase-brief.sh - Compare llm-style themes in current directory
-
-# --- Configuration ---
-LLM_STYLE_SCRIPT="./llm-style.py" # Assumes script is in current dir
-
-# Sample text focuses on key elements for comparison
-SAMPLE_MARKDOWN='Normal text, *italic*, **bold**.\n* List Item (Level 0)'
-HEADER_MARKDOWN_PREFIX='# Style: '
-# --- Script Start ---
-# (Includes checks for script existence)
-# --- Run with Default Style First ---
-echo "--- Running with Default Style (styles.json or internal) ---"
-default_header="${HEADER_MARKDOWN_PREFIX}DEFAULT (styles.json)"
-full_sample_default=$(printf '%s\n\n%s' "$default_header" "$SAMPLE_MARKDOWN")
-printf '%b\n' "$full_sample_default" | python "$LLM_STYLE_SCRIPT"
-echo; echo "---------------------------------------"; echo
-# --- Find and Loop Through Specific Style Files ---
-shopt -s nullglob
-style_files=(*style.json *styles.json)
-shopt -u nullglob
-if [ ${#style_files[@]} -eq 0 ]; then
-  echo "No *style.json or *styles.json files found in the current directory to compare."
-else
-  echo "--- Comparing Specific Style Files in Current Directory ---"
-  for style_file in "${style_files[@]}"; do
-      full_sample_markdown=$(printf '%s\n\n%s' "${HEADER_MARKDOWN_PREFIX}${style_file}" "$SAMPLE_MARKDOWN")
-      # Uses --config-dir . to find detection/mapping locally if needed
-      printf '%b\n' "$full_sample_markdown" | python "$LLM_STYLE_SCRIPT" --config-dir . --style "$style_file"
-      echo
-  done
-  echo "---------------------------------------"
-fi
-echo "Style comparison complete."
-```
-
-**To Use:** Save as <span class="title-ref">showcase-brief.sh</span>, edit <span class="title-ref">LLM_STYLE_SCRIPT</span> path if needed, <span class="title-ref">chmod +x showcase-brief.sh</span>, and run <span class="title-ref">./showcase-brief.sh</span> in a directory containing your style JSON files. It will first run with the default style, then iterate through local style files found.
+A helper script <span class="title-ref">showcase-brief.sh</span> is available in the repository to quickly compare multiple <span class="title-ref">\*style.json</span> or <span class="title-ref">\*styles.json</span> files located in the current directory. Edit the script to set the correct path to <span class="title-ref">llm-style.py</span>, make it executable (<span class="title-ref">chmod +x showcase-brief.sh</span>), and run it (<span class="title-ref">./showcase-brief.sh</span>) in a directory containing your style JSON files. It will first run with the default style, then iterate through local style files found, displaying a short sample for each.
 
 ## Comparison with Other Tools
 

@@ -13,11 +13,11 @@ llm-style: Rich Terminal Styling for LLM Output
 Rich terminal styling for Markdown-like LLM output using panels, trees, inline styles, dynamic color transformations, and configurable regex rules.
 
 .. figure:: example.png
-   :alt: Screenshot showing styled LLM output (tan-crazybold-style.json)
+   :alt: Screenshot using tan-crazybold-style.json
 
    *(Above: Example using the ``tan-crazybold-style.json`` theme. The "crazy" reverse video for bold is intentional for high contrast.)*
 
-.. figure:: example2.png
+.. figure:: uglify.png
    :alt: Screenshot showing list trees and headers (green theme)
 
    *(Above: Example showing nested lists rendered as trees and styled headers using the default green theme.)*
@@ -35,10 +35,12 @@ Key Features
 
 *   **Markdown-like Aware:** Designed to handle common structures found in LLM output, even if not strictly valid Markdown.
 *   **Highly Configurable:** Uses simple JSON files for:
+
     *   `detection.json`: Define regex patterns to identify structures.
     *   `mapping.json`: Map detected structures to style names or block configurations.
     *   `<style-file>.json` (e.g., `styles.json`, `green-theme.json`): Define named styles using `rich`'s powerful syntax, including dynamic transformations.
 *   **Rich Output:** Leverages the ``rich`` library for:
+
     *   Colors (Truecolor, 256, basic).
     *   Styles (bold, italic, underline, dim, reverse, etc.).
     *   **Panels:** Draws borders around code blocks and blockquotes.
@@ -57,10 +59,12 @@ Installation
 ------------
 
 1.  **Prerequisites:**
+
     *   Python 3.7+ (Python 3.8+ recommended for built-in `colorsys`)
     *   `pip` (Python package installer)
 
 2.  **Required Libraries:**
+
     *   `rich`: The core rendering library. (Version 13+ recommended).
     *   `pygments` (Optional, but Recommended): For syntax highlighting within code blocks.
     *   `colorsys` (Usually built-in with Python): Required for dynamic color transformations. If missing, transforms will be skipped.
@@ -72,6 +76,7 @@ Installation
         pip install "rich>=13.0" pygments
 
 3.  **Get the Script:**
+
     *   Clone this repository or download the `llm-style.py` script directly.
 
         .. code-block:: bash
@@ -113,16 +118,17 @@ Use the ``--style`` argument to specify a different JSON file located within you
 
 **Using a Local Style File (without copying):**
 
-You can use a style file from the current directory by setting the config directory to `.` **if** you also have `detection.json` and `mapping.json` present in the current directory (or you allow the script to create defaults there). This relies on the script finding the core config files locally. The script also attempts to load `--style` as a direct path if it's absolute or exists relative to the current directory.
+You can use a style file by providing a relative or absolute path. If the path exists, it will be loaded directly. You can also use ``--config-dir .`` to make the script look for `detection.json` and `mapping.json` in the current directory.
 
 .. code-block:: bash
 
-    # Assumes my-local-style.json exists in '.'
+    # Attempts to load style directly by path (relative or absolute)
+    llm "Use path style" | python llm-style.py --style ./path/to/my-style.json
+
+    # Use style from current dir, look for other configs in current dir too
     # Allows detection.json/mapping.json to be created in '.' if missing
     llm "Use local style" | python llm-style.py --config-dir . --style my-local-style.json
 
-    # Attempts to load style directly by path (relative or absolute)
-    llm "Use path style" | python llm-style.py --style ./path/to/my-style.json
 
 **Using Shell Integration (Recommended for Convenience):**
 
@@ -170,46 +176,7 @@ Redirect standard output to `/dev/null` and error/debug output to a file to isol
 Showcase Script (`showcase-brief.sh`)
 -------------------------------------
 
-To quickly compare multiple `*style.json` or `*styles.json` files located in the current directory, you can use a helper script like this:
-
-.. code-block:: bash
-
-    #!/bin/bash
-    # showcase-brief.sh - Compare llm-style themes in current directory
-
-    # --- Configuration ---
-    LLM_STYLE_SCRIPT="./llm-style.py" # Assumes script is in current dir
-
-    # Sample text focuses on key elements for comparison
-    SAMPLE_MARKDOWN='Normal text, *italic*, **bold**.\n* List Item (Level 0)'
-    HEADER_MARKDOWN_PREFIX='# Style: '
-    # --- Script Start ---
-    # (Includes checks for script existence)
-    # --- Run with Default Style First ---
-    echo "--- Running with Default Style (styles.json or internal) ---"
-    default_header="${HEADER_MARKDOWN_PREFIX}DEFAULT (styles.json)"
-    full_sample_default=$(printf '%s\n\n%s' "$default_header" "$SAMPLE_MARKDOWN")
-    printf '%b\n' "$full_sample_default" | python "$LLM_STYLE_SCRIPT"
-    echo; echo "---------------------------------------"; echo
-    # --- Find and Loop Through Specific Style Files ---
-    shopt -s nullglob
-    style_files=(*style.json *styles.json)
-    shopt -u nullglob
-    if [ ${#style_files[@]} -eq 0 ]; then
-      echo "No *style.json or *styles.json files found in the current directory to compare."
-    else
-      echo "--- Comparing Specific Style Files in Current Directory ---"
-      for style_file in "${style_files[@]}"; do
-          full_sample_markdown=$(printf '%s\n\n%s' "${HEADER_MARKDOWN_PREFIX}${style_file}" "$SAMPLE_MARKDOWN")
-          # Uses --config-dir . to find detection/mapping locally if needed
-          printf '%b\n' "$full_sample_markdown" | python "$LLM_STYLE_SCRIPT" --config-dir . --style "$style_file"
-          echo
-      done
-      echo "---------------------------------------"
-    fi
-    echo "Style comparison complete."
-
-**To Use:** Save as `showcase-brief.sh`, edit `LLM_STYLE_SCRIPT` path if needed, `chmod +x showcase-brief.sh`, and run `./showcase-brief.sh` in a directory containing your style JSON files. It will first run with the default style, then iterate through local style files found.
+A helper script `showcase-brief.sh` is available in the repository to quickly compare multiple `*style.json` or `*styles.json` files located in the current directory. Edit the script to set the correct path to `llm-style.py`, make it executable (`chmod +x showcase-brief.sh`), and run it (`./showcase-brief.sh`) in a directory containing your style JSON files. It will first run with the default style, then iterate through local style files found, displaying a short sample for each.
 
 
 Comparison with Other Tools
