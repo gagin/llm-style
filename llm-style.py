@@ -35,7 +35,9 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.rule import Rule
 from rich.style import Style, StyleType
+# --- MODIFICATION: Import ColorTriplet too ---
 from rich.color import Color, ColorType, ColorTriplet
+# --- END MODIFICATION ---
 from rich.errors import StyleSyntaxError
 from rich.tree import Tree
 from rich.measure import Measurement
@@ -188,6 +190,14 @@ def _validate_style_definition(style_name: str, style_def: StyleDefinition, debu
 
             # Validate transform part (if present)
             if transform_rules is not None:
+                 # --- ADD colorsys check here under debug ---
+                if debug:
+                    # Print availability status only once per validation run if debug is on
+                    if not hasattr(validate_configs, '_colorsys_checked'):
+                         print(f"DEBUG: colorsys module is available for transforms: {colorsys is not None}", file=sys.stderr)
+                         validate_configs._colorsys_checked = True # type: ignore
+                # --- END added check ---
+
                 if colorsys is None:
                      # Check only if colorsys is missing globally
                      if not hasattr(validate_configs, '_colorsys_warning_printed'): # Print only once
@@ -223,9 +233,12 @@ def validate_configs(detection_rules: Dict, compiled_rules: Dict, style_mapping:
     special_mapping_keys = {"default_text", "code_block", "blockquote", "list_block"}
     list_content_mapping_keys = {"list_item_bullet", "list_item_numbered"}
     if debug: print("DEBUG: Validating configuration...", file=sys.stderr)
-    # Reset colorsys warning flag
+    # Reset flags at the start of validation
     if hasattr(validate_configs, '_colorsys_warning_printed'):
         delattr(validate_configs, '_colorsys_warning_printed')
+    if hasattr(validate_configs, '_colorsys_checked'):
+        delattr(validate_configs, '_colorsys_checked')
+
 
     # 1. Validate Compiled Rules
     for name, pattern in compiled_rules.items():
@@ -320,25 +333,56 @@ def load_all_configs(config_dir: str, style_filename: str, debug: bool = False) 
 
     detection_path = config_dir_path / "detection.json"
     mapping_path = config_dir_path / "mapping.json"
-    styles_path = config_dir_path / style_filename # Use the provided filename
 
-    detection_rules_raw = load_or_create_config(detection_path, DEFAULT_DETECTION_JSON, debug=debug) # Now defined
+    # --- Determine Style Path ---
+    style_path_arg = Path(style_filename).expanduser() # Expand potential ~
+
+    # Check if the style argument is an absolute path or exists relative to CWD
+    # Use resolve() to get absolute path for comparison consistency
+    current_working_dir = Path.cwd()
+    resolved_style_path_arg = (current_working_dir / style_path_arg).resolve()
+
+    if style_path_arg.is_absolute():
+         styles_path = style_path_arg.resolve()
+         if debug: print(f"DEBUG: Using absolute style path: {styles_path}", file=sys.stderr)
+    elif resolved_style_path_arg.exists() and resolved_style_path_arg.is_file():
+         # Check relative to CWD *after* checking absolute
+         styles_path = resolved_style_path_arg
+         if debug: print(f"DEBUG: Using style path relative to CWD: {styles_path}", file=sys.stderr)
+    else:
+        # Assume it's a filename within the config directory (original behavior)
+        styles_path = (config_dir_path / style_filename).resolve()
+        if debug: print(f"DEBUG: Looking for style '{style_filename}' in config dir: {config_dir_path}", file=sys.stderr)
+    # --- End Style Path Determination ---
+
+    # --- Load detection/mapping (use config_dir_path) ---
+    detection_rules_raw = load_or_create_config(detection_path, DEFAULT_DETECTION_JSON, debug=debug)
     if not isinstance(detection_rules_raw, dict):
         print(f"ERROR: {detection_path} must contain a JSON object.", file=sys.stderr); sys.exit(1)
-
-    style_mapping = load_or_create_config(mapping_path, DEFAULT_MAPPING_JSON, debug=debug) # Now defined
+    style_mapping = load_or_create_config(mapping_path, DEFAULT_MAPPING_JSON, debug=debug)
     if not isinstance(style_mapping, dict):
         print(f"ERROR: {mapping_path} must contain a JSON object.", file=sys.stderr); sys.exit(1)
 
-    styles: Dict[str, StyleDefinition] # Use the Type Alias
-    if style_filename == "styles.json":
-        styles = load_or_create_config(styles_path, DEFAULT_STYLES_JSON, debug=debug) # Now defined
+    # --- Load styles using the determined styles_path ---
+    styles: Dict[str, StyleDefinition]
+    # Special handling only if the *default filename* 'styles.json' was requested
+    # AND it resolves to the default config directory location
+    is_default_style_in_default_dir = (
+         style_filename == "styles.json" and
+         styles_path == (config_dir_path / "styles.json").resolve() # Compare resolved paths
+    )
+
+    if is_default_style_in_default_dir:
+        # Only create the default styles.json if it's the default name AND in the default location AND missing
+        styles = load_or_create_config(styles_path, DEFAULT_STYLES_JSON, debug=debug)
     else:
-        styles = load_config_file(styles_path, debug=debug) # Now defined
+        # If a custom style file is requested (by name or path), load it but DON'T create it if missing
+        styles = load_config_file(styles_path, debug=debug) # load_config_file already errors if not found
 
     if not isinstance(styles, dict):
         print(f"ERROR: {styles_path} must contain a JSON object.", file=sys.stderr); sys.exit(1)
 
+    # --- Compile Rules ---
     compiled_rules: Dict[str, Optional[re.Pattern]] = {}
     for name, pattern_str in detection_rules_raw.items():
         try:
@@ -349,7 +393,8 @@ def load_all_configs(config_dir: str, style_filename: str, debug: bool = False) 
         except re.error as e: print(f"ERROR: Syntax Error in regex '{name}': {e}", file=sys.stderr); compiled_rules[name] = None
         except TypeError: print(f"ERROR: Type Error compiling regex '{name}'.", file=sys.stderr); compiled_rules[name] = None
 
-    if not validate_configs(detection_rules_raw, compiled_rules, style_mapping, styles, debug=debug): # Now defined
+    # --- Validate ---
+    if not validate_configs(detection_rules_raw, compiled_rules, style_mapping, styles, debug=debug):
         sys.exit(1)
 
     return compiled_rules, style_mapping, styles
@@ -490,8 +535,9 @@ def _apply_transform(base_color: Optional[Color], transform_rules: Optional[Dict
         if debug:
             print(f"ERROR applying color transform HLS logic: {e}", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
-        return base_color # Return original color on error    
-# --- HELPER for Inline Markup (Modified) ---
+        return base_color # Return original color on error
+
+# --- HELPER for Inline Markup ---
 def process_inline_markup(text_content: str, base_style: str, styles: Dict[str, StyleDefinition], compiled_rules: Dict[str, Optional[re.Pattern]], *, debug: bool = False) -> Text:
     """Processes inline markup (bold, italic, code) supporting transformations."""
     output_text = Text("", style=base_style)
@@ -504,7 +550,7 @@ def process_inline_markup(text_content: str, base_style: str, styles: Dict[str, 
         output_text.append(text_content)
         return output_text
 
-    # --- Regex Setup (same) ---
+    # --- Regex Setup ---
     inline_rule_map_defs = {
         "bold_star": styles.get("style_inline_bold", "bold"),
         "bold_under": styles.get("style_inline_bold", "bold"),
@@ -644,6 +690,7 @@ def process_inline_markup(text_content: str, base_style: str, styles: Dict[str, 
         if remaining_bit: output_text.append(remaining_bit)
 
     return output_text
+
 # ==============================================================================
 # 5. Main Styling Logic
 # ==============================================================================
@@ -924,7 +971,7 @@ def main():
     parser.add_argument(
         "--style",
         default="styles.json",
-        help="Filename of the style definitions JSON file (e.g., 'styles.json', 'calm-styles.json') within the config directory."
+        help="Filename or path of the style definitions JSON file. If not absolute/relative, assumed within config directory."
     )
     parser.add_argument(
         "--debug",
@@ -948,14 +995,20 @@ def main():
     if colorsys is None:
         # Simple check if style file likely contains transform syntax
         has_transform = False
-        temp_styles_path = Path(args.config_dir).expanduser() / args.style
+        # Determine potential style path (simplified check)
+        style_path_arg = Path(args.style).expanduser()
+        if style_path_arg.is_absolute():
+            temp_styles_path = style_path_arg
+        elif (Path.cwd() / style_path_arg).exists():
+             temp_styles_path = Path.cwd() / style_path_arg
+        else:
+            temp_styles_path = Path(args.config_dir).expanduser() / args.style
+
         if temp_styles_path.exists():
             try:
                 with open(temp_styles_path, 'r', encoding='utf-8') as f_check:
-                    # Quick check for '"transform":' substring - crude but avoids full parse here
-                    if '"transform":' in f_check.read():
-                        has_transform = True
-            except Exception: pass # Ignore errors here, validation catches later
+                    if '"transform":' in f_check.read(): has_transform = True
+            except Exception: pass
         if has_transform:
             print("Warning: Style file may contain 'transform' rules, but the 'colorsys' module could not be imported. Transformations will be skipped.", file=sys.stderr)
 
@@ -963,7 +1016,7 @@ def main():
     try:
         compiled_rules, style_mapping, styles = load_all_configs(
             args.config_dir,
-            args.style, # Pass the style filename
+            args.style, # Pass the style filename/path
             debug=args.debug
         )
     except SystemExit: sys.exit(1)

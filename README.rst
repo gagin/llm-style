@@ -17,6 +17,11 @@ Rich terminal styling for Markdown-like LLM output using panels, trees, inline s
 
    *(Above: Example using the ``tan-crazybold-style.json`` theme. The "crazy" reverse video for bold is intentional for high contrast.)*
 
+.. figure:: example2.png
+   :alt: Screenshot showing list trees and headers (green theme)
+
+   *(Above: Example showing nested lists rendered as trees and styled headers using the default green theme.)*
+
 
 Motivation
 ----------
@@ -52,7 +57,7 @@ Installation
 ------------
 
 1.  **Prerequisites:**
-    *   Python 3.7+ (May need 3.8+ for full `colorsys` support if not built-in)
+    *   Python 3.7+ (Python 3.8+ recommended for built-in `colorsys`)
     *   `pip` (Python package installer)
 
 2.  **Required Libraries:**
@@ -108,12 +113,16 @@ Use the ``--style`` argument to specify a different JSON file located within you
 
 **Using a Local Style File (without copying):**
 
-You can use a style file from the current directory by setting the config directory to `.` *if* you also have `detection.json` and `mapping.json` present in the current directory (or you allow the script to create defaults there).
+You can use a style file from the current directory by setting the config directory to `.` **if** you also have `detection.json` and `mapping.json` present in the current directory (or you allow the script to create defaults there). This relies on the script finding the core config files locally. The script also attempts to load `--style` as a direct path if it's absolute or exists relative to the current directory.
 
 .. code-block:: bash
 
-    # Assumes my-local-style.json, detection.json, mapping.json are in '.'
+    # Assumes my-local-style.json exists in '.'
+    # Allows detection.json/mapping.json to be created in '.' if missing
     llm "Use local style" | python llm-style.py --config-dir . --style my-local-style.json
+
+    # Attempts to load style directly by path (relative or absolute)
+    llm "Use path style" | python llm-style.py --style ./path/to/my-style.json
 
 **Using Shell Integration (Recommended for Convenience):**
 
@@ -153,22 +162,65 @@ Redirect standard output to `/dev/null` and error/debug output to a file to isol
       -h, --help            show this help message and exit
       --config-dir CONFIG_DIR
                             Directory containing detection.json, mapping.json, and style JSON files. (default: ~/.config/llm-style)
-      --style STYLE         Filename of the style definitions JSON file (e.g., 'styles.json', 'calm-styles.json') within the config directory. (default: styles.json)
+      --style STYLE         Filename or path of the style definitions JSON file. If not absolute/relative, assumed within config directory. (default: styles.json)
       --debug               Enable debug/verbose output to stderr. (default: False)
       --keep-markup         Keep original Markdown block characters (e.g., '#', '*', '>') in the output. (default: False)
+
+
+Showcase Script (`showcase-brief.sh`)
+-------------------------------------
+
+To quickly compare multiple `*style.json` or `*styles.json` files located in the current directory, you can use a helper script like this:
+
+.. code-block:: bash
+
+    #!/bin/bash
+    # showcase-brief.sh - Compare llm-style themes in current directory
+
+    # --- Configuration ---
+    LLM_STYLE_SCRIPT="./llm-style.py" # Assumes script is in current dir
+
+    # Sample text focuses on key elements for comparison
+    SAMPLE_MARKDOWN='Normal text, *italic*, **bold**.\n* List Item (Level 0)'
+    HEADER_MARKDOWN_PREFIX='# Style: '
+    # --- Script Start ---
+    # (Includes checks for script existence)
+    # --- Run with Default Style First ---
+    echo "--- Running with Default Style (styles.json or internal) ---"
+    default_header="${HEADER_MARKDOWN_PREFIX}DEFAULT (styles.json)"
+    full_sample_default=$(printf '%s\n\n%s' "$default_header" "$SAMPLE_MARKDOWN")
+    printf '%b\n' "$full_sample_default" | python "$LLM_STYLE_SCRIPT"
+    echo; echo "---------------------------------------"; echo
+    # --- Find and Loop Through Specific Style Files ---
+    shopt -s nullglob
+    style_files=(*style.json *styles.json)
+    shopt -u nullglob
+    if [ ${#style_files[@]} -eq 0 ]; then
+      echo "No *style.json or *styles.json files found in the current directory to compare."
+    else
+      echo "--- Comparing Specific Style Files in Current Directory ---"
+      for style_file in "${style_files[@]}"; do
+          full_sample_markdown=$(printf '%s\n\n%s' "${HEADER_MARKDOWN_PREFIX}${style_file}" "$SAMPLE_MARKDOWN")
+          # Uses --config-dir . to find detection/mapping locally if needed
+          printf '%b\n' "$full_sample_markdown" | python "$LLM_STYLE_SCRIPT" --config-dir . --style "$style_file"
+          echo
+      done
+      echo "---------------------------------------"
+    fi
+    echo "Style comparison complete."
+
+**To Use:** Save as `showcase-brief.sh`, edit `LLM_STYLE_SCRIPT` path if needed, `chmod +x showcase-brief.sh`, and run `./showcase-brief.sh` in a directory containing your style JSON files. It will first run with the default style, then iterate through local style files found.
 
 
 Comparison with Other Tools
 ---------------------------
 
-*(This section remains largely the same - highlighting flexibility for "Markdown-like" text, unique rendering via Rich (Panels/Trees), and configuration)*
-
 Tools like `glow`_, `mdcat`_, and `bat`_ are excellent terminal Markdown renderers/viewers. Why use ``llm-style``?
 
-*   **Strictness:** Tools like `glow` or `mdcat` often expect reasonably valid CommonMark or GitHub Flavored Markdown... `llm-style` uses regex and is designed to be more forgiving...
-*   **Flexibility vs. Robustness:** Standard Markdown renderers have robust parsers... `llm-style`'s regex-based approach... offers the flexibility to style arbitrary, non-Markdown patterns...
-*   **Unique Rendering:** `llm-style` leverages ``rich`` features... Panels... Trees...
-*   **Configuration:** `llm-style` offers direct JSON configuration... including dynamic transformations.
+*   **Strictness:** Tools like `glow` or `mdcat` often expect reasonably valid CommonMark or GitHub Flavored Markdown. They might produce errors or poor formatting if the LLM output deviates significantly (e.g., inconsistent indentation, malformed lists, unusual syntax). ``llm-style`` uses regex and is designed to be more forgiving of "Markdown-like" text.
+*   **Flexibility vs. Robustness:** Standard Markdown renderers have robust parsers for *Markdown*, handling complex nesting and edge cases correctly, including inline formatting. ``llm-style``'s regex-based approach (especially for inline elements) is less robust for pure Markdown but offers the flexibility to style arbitrary, non-Markdown patterns defined in ``detection.json``.
+*   **Unique Rendering:** ``llm-style`` leverages ``rich`` features not typically found in standard Markdown viewers, specifically drawing bordered **Panels** around code blocks/blockquotes and rendering nested lists with guiding **Tree** lines.
+*   **Configuration:** ``llm-style`` offers direct JSON configuration for detection patterns, style mapping, and `rich` styles, including dynamic color transformations for inline elements. Other tools rely on their specific theme formats.
 
 **Choose ``llm-style`` if:**
 
@@ -181,8 +233,8 @@ Tools like `glow`_, `mdcat`_, and `bat`_ are excellent terminal Markdown rendere
 **Choose standard tools (``glow``, ``bat``, ``mdcat``) if:**
 
 *   Your input is reliably well-formed Markdown.
-*   Robust handling of all Markdown features... is the top priority.
-*   You prefer using existing theme ecosystems...
+*   Robust handling of all Markdown features (especially complex inline/nested elements) is the top priority.
+*   You prefer using existing theme ecosystems (e.g., for ``bat``).
 
 .. _glow: https://github.com/charmbracelet/glow
 .. _mdcat: https://github.com/swsnr/mdcat
@@ -198,7 +250,7 @@ On the first run, if the configuration directory (default: ``~/.config/llm-style
 *   **`mapping.json`:** Connects rule names from `detection.json` to style names or special block configurations (like panels). Requires ``"default_text"``.
 *   **`<style-file>.json`** (e.g., `styles.json`, specified via ``--style``): Maps style names (referenced in `mapping.json`) to ``rich`` style definitions. This is where colors, attributes, and dynamic transformations are defined.
 
-**Recommendation:** Copy the default `styles.json` generated by the script or provided theme examples (like `tan-crazybold-style.json`) from the source repository into your `~/.config/llm-style/` directory. Use these as starting points for your own customization by editing the JSON files.
+**Recommendation:** Copy the default `styles.json` generated by the script or provided theme examples (like `tan-crazybold-style.json`, `panel-showcase-style.json`) from the source repository into your `~/.config/llm-style/` directory. Use these as starting points for your own customization by editing the JSON files.
 
 
 Color Guide (Using `rich` Styles)
@@ -208,10 +260,10 @@ The styles defined in your style JSON file use the syntax understood by the `ric
 
 **How to Specify Colors:**
 
-1.  **Standard Color Names:** Use common names like ``"red"``, ``"green"``, ``"blue"``, ``"yellow"``, ``"magenta"``, ``"cyan"``, ``"white"``, ``"black"``. Hex codes are generally more reliable than less common names.
-2.  **Hex Codes (Truecolor):** Recommended for specific colors if your terminal supports Truecolor. Example: ``"#FFA500"`` (Orange), ``"#A0522D"`` (Sienna).
+1.  **Standard Color Names:** Use common names like ``"red"``, ``"green"``, ``"blue"``, ``"yellow"``. Hex codes are generally more reliable than less common names.
+2.  **Hex Codes (Truecolor):** Recommended for specific colors if your terminal supports Truecolor. Example: ``"#FFA500"``, ``"#A0522D"``.
 3.  **RGB Tuples (Truecolor):** Specify RGB values from 0-255. Example: ``"rgb(255,165,0)"``.
-4.  **Numbered Colors (256-Color Terminals):** Use numbers 0-255. Example: ``"color(178)"`` (Gold/Orange).
+4.  **Numbered Colors (256-Color Terminals):** Use numbers 0-255. Example: ``"color(178)"``.
 
 **Combining with Attributes:**
 
@@ -259,24 +311,28 @@ You can define these styles in two ways:
         }
 
     *   `"attributes"`: (String) Basic `rich` style attributes (e.g., `"bold"`, `"bold underline"`).
-    *   `"transform"`: (Object, Optional) Rules for color modification (`adjust_brightness`, `adjust_saturation`, `shift_hue`). See details in the source code or previous README versions if needed.
+    *   `"transform"`: (Object, Optional) Rules for color modification (`adjust_brightness`, `adjust_saturation`, `shift_hue`). See source code for details on implementation.
 
     **How it works:** The script gets the base color. If a `transform` object is defined, it attempts HSL adjustments and uses the *new* color with the defined `attributes`. If transformation fails (e.g., base color unusable), only `attributes` are applied.
 
-**Important Note:** Inline styling (including transformations) is **not** applied within fenced code blocks (``` ```). The content of code blocks is treated literally to preserve code structure and syntax.
+**Important Note:** Inline styling (including transformations) is **not** applied within fenced code blocks (``` ```). The content of code blocks is treated literally to preserve code structure and syntax, optionally using language-specific syntax highlighting via `pygments`.
 
 
 A Note on Color Transformations and `rich` / Environment Issues
 -------------------------------------------------------------
 
-*(This section remains largely the same - explains the dependency on `colorsys` and RGB conversion, the observed AttributeErrors, the integer-value workaround in the script, and recommends checking environment/reinstalling rich if issues persist)*
+The dynamic color transformation feature relies on:
+1. The `colorsys` standard Python library module.
+2. The ability to reliably get an RGB representation of the "base color" from the `rich.color.Color` object provided by the parsed base style.
 
-... The `_apply_transform` function in `llm-style.py` includes a workaround that avoids directly referencing `ColorType.RGB` or `ColorType.SYSTEM` attributes by name. Instead, it checks the integer value of the color type (`int(base_color.type)`)...
+During development, peculiar `AttributeError`s related to `rich.color.ColorType.RGB` and `rich.color.ColorType.SYSTEM` were encountered, even when using recent versions of `rich` (e.g., 13.9.x) in certain environments (specifically observed within a Conda setup). The root cause likely relates to environment inconsistencies or how Python modules are loaded/shadowed.
+
+**The Workaround:** The `_apply_transform` function in `llm-style.py` includes a workaround that avoids directly referencing `ColorType.RGB` or `ColorType.SYSTEM` attributes by name. Instead, it checks the integer value of the color type (`int(base_color.type)`) against expected standard values (e.g., `3` for `TRUECOLOR`) or accesses the `.triplet` attribute directly.
 
 **Caveats:**
-*   This workaround relies on internal integer values...
-*   Transformations may still fail if `get_truecolor()` cannot resolve certain base colors...
-*   If you encounter persistent issues... ensure a clean Python environment... (`pip install --force-reinstall "rich>=13.0"`).
+*   This workaround relies on internal integer values of `ColorType` members remaining consistent.
+*   Transformations may still fail if `get_truecolor()` cannot resolve certain base colors.
+*   If you encounter persistent issues (check `--debug` output), ensure a clean Python environment and reinstall `rich` (`pip install --force-reinstall "rich>=13.0"`).
 
 
 Shell Integration (Optional)
@@ -302,37 +358,31 @@ This function overrides the default `llm` command.
     llm() {
       # Use 'command llm' to call the *original* llm executable, preventing recursion
       if ! command -v llm &> /dev/null; then
-        echo "Zsh Error: Original 'llm' command not found." >&2
-        return 1
+        echo "Zsh Error: Original 'llm' command not found." >&2; return 1
       fi
 
       # Check if style script exists and is runnable
-      # Use -f to check if it's a regular file and -r for readable OR -x for executable
       if [[ ! -f "$_LLM_STYLE_SCRIPT_PATH" || (! -r "$_LLM_STYLE_SCRIPT_PATH" && ! -x "$_LLM_STYLE_SCRIPT_PATH") ]]; then
          echo "Zsh Warning: llm-style script not found/runnable at '$_LLM_STYLE_SCRIPT_PATH'. Running 'llm' without styling." >&2
-         command llm "$@" # Run original llm directly as fallback
-         return $?
+         command llm "$@"; return $?
       fi
 
       # Run the original llm and pipe to the style script with the chosen style
-      # Ensure python executable is correct (e.g., python3 or just python)
       command llm "$@" | python "$_LLM_STYLE_SCRIPT_PATH" --style "$_LLM_STYLE_DEFAULT_FILE"
       # Preserve the exit status of the pipe (Zsh specific: index 2 is the python script)
       # For Bash, use: return ${PIPESTATUS[1]}
       return ${pipestatus[2]}
     }
-
     # ------------------------------------------------------------
     # End llm-style integration
     # ------------------------------------------------------------
 
 **Setup:**
-1.  **Edit** the function above, setting `_LLM_STYLE_SCRIPT_PATH` to the correct absolute path of your `llm-style.py` script.
-2.  **Set** `_LLM_STYLE_DEFAULT_FILE` to the filename (within your `~/.config/llm-style/` directory) of the style theme you want to use by default (e.g., `"styles.json"`, `"tan-crazybold-style.json"`).
-3.  **Add** the edited function block to your `~/.zshrc` file.
-4.  **Reload** your shell configuration (`source ~/.zshrc` or open a new terminal).
+1.  **Edit** the function, setting `_LLM_STYLE_SCRIPT_PATH` and `_LLM_STYLE_DEFAULT_FILE`.
+2.  **Add** the block to your `~/.zshrc` file.
+3.  **Reload** your shell configuration (`source ~/.zshrc` or open a new terminal).
 
-Now, running `llm "your prompt"` will automatically apply the styling using your chosen default style file.
+Now, running `llm "prompt"` automatically applies styling.
 
 **Bypassing the Wrapper:** To run the original `llm` command without styling, use:
    ``command llm "your prompt"``
